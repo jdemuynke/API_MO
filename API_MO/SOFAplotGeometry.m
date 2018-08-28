@@ -92,10 +92,12 @@ switch Obj.GLOBAL_SOFAConventions
         xlabel(['X / ' Obj.ListenerPosition_Units]);
         ylabel(['Y / ' Obj.ListenerPosition_Units]);
         zlabel(['Z / ' Obj.ListenerPosition_Units]);
+        % Set fixed aspect ratio
+        axis equal;
         
     case {'AmbisonicsDRIR'}
         
-        legendStrings = {'ListenerPosition','ListenerView','Receivers','EmitterPosition'};
+        legendStrings = {'ListenerPosition','ListenerView','EmitterPosition'};
         
         if ~exist('index','var')
             index=1:Obj.API.E;
@@ -118,11 +120,20 @@ switch Obj.GLOBAL_SOFAConventions
         end
         legendEntries = [];
         title(sprintf('%s, %s',Obj.GLOBAL_SOFAConventions,Obj.GLOBAL_RoomType));
-
+        
         LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
         LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
         RP = SOFAconvertCoordinates(Obj.ReceiverPosition,Obj.ReceiverPosition_Type,'cartesian');
-        E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
+        
+        if size(LP,1) == 1
+            E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
+        else
+            if ndims(squeeze(Obj.EmitterPosition)) == 3
+                E  = SOFAconvertCoordinates(transpose(Obj.EmitterPosition(:,index)),Obj.EmitterPosition_Type,'cartesian');
+            else
+                E  = SOFAconvertCoordinates(Obj.EmitterPosition(:,:,index),Obj.EmitterPosition_Type,'cartesian');
+            end
+        end
         
         % Plot ListenerPosition
         legendEntries(end+1) = plot3(LP(:,1),LP(:,2),LP(:,3),'ro','MarkerFaceColor',[1 0 0]);
@@ -131,28 +142,42 @@ switch Obj.GLOBAL_SOFAConventions
             % Scale size of ListenerView vector smaller
             LV(ii,:) = 1*LV(ii,:)./norm(LV(ii,:));
             % Plot line for ListenerView vector
-            line([LP(ii,1), LV(ii,1)+LP(ii,1)], [LP(ii,2) LV(ii,2)+LP(ii,2)], 'Color',[1 0 0]);
+            line([LP(ii,1), LV(ii,1)+LP(ii,1)], [LP(ii,2) LV(ii,2)+LP(ii,2)], [LP(ii,3), LV(ii,3)+LP(ii,3)], 'Color',[1 0 0]);
         end
         legendEntries(end+1) = plot3(LV(:,1)+LP(:,1),LV(:,2)+LP(:,2),LV(:,3)+LP(:,3),'ro','MarkerFaceColor',[1 1 1]);
         
         % Plot EmitterPosition
-        legendEntries(end+1)=scatter3(E(:,1),E(:,2),E(:,3),'filled');
+        legendEntries(end+1)=scatter3(E(:,1)+LP(:,1),E(:,2)+LP(:,2),E(:,3)+LP(:,3),'filled');
         
         legend(legendEntries,legendStrings,'Location','NorthEastOutside');
         xlabel(['X / ' Obj.ListenerPosition_Units]);
         ylabel(['Y / ' Obj.ListenerPosition_Units]);
         zlabel(['Z / ' Obj.ListenerPosition_Units]);
         
+        view(-30,25);
+        % Set fixed aspect ratio
+        axis equal;
+        
+        if strcmp(Obj.GLOBAL_RoomType,'shoebox')            
+            xlim([0 Obj.RoomCornerB(1)]);
+            ylim([0 Obj.RoomCornerB(2)]);
+            zlim([0 Obj.RoomCornerB(3)]);   
+        end
+        
+        
     otherwise
         error('This SOFAConventions is not supported for plotting');
 end
 
-% Set fixed aspect ratio
-axis equal;
+
 % Add a little bit extra space at the axis
-axisLimits = axis();
-paddingSpace = 0.2 * max(abs(axisLimits(:)));
-axisLimits([1 3]) = axisLimits([1 3]) - paddingSpace;
-axisLimits([2 4]) = axisLimits([2 4]) + paddingSpace;
-axis(axisLimits);
+if ~strcmp(Obj.GLOBAL_RoomType,'shoebox')
+    
+    axisLimits = axis();
+    paddingSpace = 0.2 * max(abs(axisLimits(:)));
+    axisLimits([1 3]) = axisLimits([1 3]) - paddingSpace;
+    axisLimits([2 4]) = axisLimits([2 4]) + paddingSpace;
+    axis(axisLimits);
+    
+end
 grid on;
