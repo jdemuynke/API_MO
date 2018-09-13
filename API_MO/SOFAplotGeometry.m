@@ -129,9 +129,9 @@ switch Obj.GLOBAL_SOFAConventions
             E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
         else
             if ndims(squeeze(Obj.EmitterPosition)) == 3
-                E  = SOFAconvertCoordinates(transpose(Obj.EmitterPosition(:,index)),Obj.EmitterPosition_Type,'cartesian');
+                E = SOFAconvertCoordinates(transpose(reshape(permute(Obj.EmitterPosition,[2 1 3]),3,Obj.API.E*Obj.API.M)),Obj.EmitterPosition_Type,'cartesian');
             else
-                E  = SOFAconvertCoordinates(Obj.EmitterPosition(:,:,index),Obj.EmitterPosition_Type,'cartesian');
+                E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:,:),Obj.EmitterPosition_Type,'cartesian');
             end
         end
         
@@ -145,7 +145,6 @@ switch Obj.GLOBAL_SOFAConventions
             line([LP(ii,1), LV(ii,1)+LP(ii,1)], [LP(ii,2) LV(ii,2)+LP(ii,2)], [LP(ii,3), LV(ii,3)+LP(ii,3)], 'Color',[1 0 0]);
         end
         legendEntries(end+1) = plot3(LV(:,1)+LP(:,1),LV(:,2)+LP(:,2),LV(:,3)+LP(:,3),'ro','MarkerFaceColor',[1 1 1]);
-        
         % Plot EmitterPosition
         legendEntries(end+1)=scatter3(E(:,1)+SP(:,1),E(:,2)+SP(:,2),E(:,3)+SP(:,3),'filled');
         
