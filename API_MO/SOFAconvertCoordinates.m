@@ -34,10 +34,10 @@ if strcmp(output_type,input_type)==0
         case 'cartesian'
             %do nothing
         case {'spherical','geodesic'}
-            [temp(:,1),temp(:,2),temp(:,3)]=sph2cart(deg2rad(input(:,1)),deg2rad(input(:,2)),input(:,3));
+            [temp(:,1,:),temp(:,2,:),temp(:,3,:)]=sph2cart(deg2rad(input(:,1,:)),deg2rad(input(:,2,:)),input(:,3,:));
         case 'horizontal-polar'
-            [temp(:,1),temp(:,3),temp(:,2)]=sph2cart(deg2rad(input(:,2)),deg2rad(input(:,1)),input(:,3));
-            temp(:,2)=-temp(:,2);
+            [temp(:,1,:),temp(:,3,:),temp(:,2,:)]=sph2cart(deg2rad(input(:,2,:)),deg2rad(input(:,1,:)),input(:,3,:));
+            temp(:,2,:)=-temp(:,2,:);
     end
 
     output=temp;
@@ -45,13 +45,13 @@ if strcmp(output_type,input_type)==0
         case 'cartesian'
             %do nothing
         case {'spherical','geodesic'}
-            [output(:,1),output(:,2),output(:,3)]=cart2sph(temp(:,1),temp(:,2),temp(:,3));
-            output(:,1:2)=rad2deg(output(:,1:2));
+            [output(:,1,:),output(:,2,:),output(:,3,:)]=cart2sph(temp(:,1,:),temp(:,2,:),temp(:,3,:));
+            output(:,1:2,:)=rad2deg(output(:,1:2,:));
         case 'horizontal-polar'
-            [output(:,2),output(:,1),output(:,3)]=cart2sph(temp(:,1),temp(:,3),-temp(:,2));
-            output(:,1:2)=rad2deg(output(:,1:2));
-            output(:,1)=-output(:,1);
-            output(:,2)=mod(output(:,2),360);
+            [output(:,2,:),output(:,1,:),output(:,3,:)]=cart2sph(temp(:,1,:),temp(:,3,:),-temp(:,2,:));
+            output(:,1:2,:)=rad2deg(output(:,1:2,:));
+            output(:,1,:)=-output(:,1,:);
+            output(:,2,:)=mod(output(:,2,:),360);
     end
 end
 
