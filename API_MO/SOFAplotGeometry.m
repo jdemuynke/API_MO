@@ -97,7 +97,7 @@ switch Obj.GLOBAL_SOFAConventions
         
     case {'AmbisonicsDRIR'}
         
-        legendStrings = {'ListenerPosition','ListenerView','EmitterPosition'};
+        legendStrings = {'ListenerPosition','ListenerView','EmitterPosition','EmitterView'};
         
         if ~exist('index','var')
             index=1:Obj.API.E;
@@ -119,49 +119,57 @@ switch Obj.GLOBAL_SOFAConventions
             figure; hold on;
         end
         legendEntries = [];
-        title(sprintf('%s, %s',Obj.GLOBAL_SOFAConventions,Obj.GLOBAL_RoomType));
+        title(sprintf('%s, %s, %s',Obj.GLOBAL_SOFAConventions,Obj.GLOBAL_RoomType,Obj.GLOBAL_DatabaseName));
         
         LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
         LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
-        SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
         
-        if size(LP,1) == 1
-            E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
-        else
-            if ndims(squeeze(Obj.EmitterPosition)) == 3
-                E = SOFAconvertCoordinates(transpose(reshape(permute(Obj.EmitterPosition,[2 1 3]),3,Obj.API.E*Obj.API.M)),Obj.EmitterPosition_Type,'cartesian');
-            else
-                E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:,:),Obj.EmitterPosition_Type,'cartesian');
-            end
-        end
+%         if size(LP,1) == 1
+%             E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
+%         else
+%             if ndims(squeeze(Obj.EmitterPosition)) == 3
+%                 E = SOFAconvertCoordinates(transpose(reshape(permute(Obj.EmitterPosition,[2 1 3]),3,Obj.API.E*Obj.API.M)),Obj.EmitterPosition_Type,'cartesian');
+%             else
+%                 E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:,:),Obj.EmitterPosition_Type,'cartesian');
+%             end
+%         end
         
         % Plot ListenerPosition
-        legendEntries(end+1) = plot3(LP(:,1),LP(:,2),LP(:,3),'ro','MarkerFaceColor',[1 0 0]);
-        % Plot ListenerView
-        for ii=1:size(LV,1)
-            % Scale size of ListenerView vector smaller
-            LV(ii,:) = 1*LV(ii,:)./norm(LV(ii,:));
-            % Plot line for ListenerView vector
-            line([LP(ii,1), LV(ii,1)+LP(ii,1)], [LP(ii,2) LV(ii,2)+LP(ii,2)], [LP(ii,3), LV(ii,3)+LP(ii,3)], 'Color',[1 0 0]);
+        for jj = 1:size(LP,3)
+            legendEntries(1) = scatter3(LP(:,1,jj),LP(:,2,jj),LP(:,3,jj),'filled','MarkerFaceColor',[0.8500 0.3250 0.0980]);
         end
-        legendEntries(end+1) = plot3(LV(:,1)+LP(:,1),LV(:,2)+LP(:,2),LV(:,3)+LP(:,3),'ro','MarkerFaceColor',[1 1 1]);
-        % Plot EmitterPosition
-        legendEntries(end+1)=scatter3(E(:,1)+SP(:,1),E(:,2)+SP(:,2),E(:,3)+SP(:,3),'filled');
         
-        %Plot EmitterView if any
-        if isfield(Obj,'EmitterView')
-            EV = SOFAconvertCoordinates(Obj.EmitterView,Obj.EmitterView_Type,'cartesian');
-            EP = SOFAconvertCoordinates(Obj.EmitterPosition,Obj.EmitterPosition_Type,'cartesian');
+        % Plot ListenerView
+        for jj = 1:size(LV,3)
+            for ii=1:size(LV,1)
+                % Scale size of ListenerView vector smaller
+                LV(ii,:,jj) = 1*LV(ii,:,jj)./norm(LV(ii,:,jj));
+                % Plot line for ListenerView vector
+                line([LP(ii,1,jj), LV(ii,1,jj)+LP(ii,1,jj)], [LP(ii,2,jj) LV(ii,2,jj)+LP(ii,2,jj)], [LP(ii,3,jj), LV(ii,3,jj)+LP(ii,3,jj)], 'Color',[0.8500 0.3250 0.0980]);
+            end
+            legendEntries(2) = scatter3(LV(:,1,jj)+LP(:,1,jj),LV(:,2,jj)+LP(:,2,jj),LV(:,3,jj)+LP(:,3,jj),'MarkerEdgeColor',[0.8500 0.3250 0.0980],'MarkerFaceAlpha',0);
+        end
+        
+        SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
+        EP = SOFAconvertCoordinates(Obj.EmitterPosition,Obj.EmitterPosition_Type,'cartesian');
+        
+        % Plot EmitterPosition
+        for jj = 1:size(EP,3)
+            legendEntries(3) = scatter3(EP(:,1,jj)+SP(:,1),EP(:,2,jj)+SP(:,2),EP(:,3,jj)+SP(:,3),'filled','MarkerFaceColor',[0 0.4470 0.7410]);
+        end
+        
+        EV = SOFAconvertCoordinates(Obj.EmitterView,Obj.EmitterView_Type,'cartesian');
+        
+        %Plot EmitterView
+        for jj = 1:size(EV,3)
             for ii=1:size(EV,1)
                 % Scale size of EmitterView vector smaller
-                EV(ii,:) = 1*EV(ii,:)./norm(EV(ii,:));
+                EV(ii,:,jj) = 0.5*EV(ii,:,jj)./norm(EV(ii,:,jj));
                 % Plot line for EmitterView vector
-                line([EP(ii,1), EV(ii,1)+EP(ii,1)], [EP(ii,2) EV(ii,2)+EP(ii,2)], [EP(ii,3), EV(ii,3)+EP(ii,3)]);
+                line([EP(ii,1,jj)+SP(:,1), EV(ii,1,jj)+EP(ii,1,jj)+SP(:,1)], [EP(ii,2,jj)+SP(:,2) EV(ii,2,jj)+EP(ii,2,jj)+SP(:,2)], [EP(ii,3,jj)+SP(:,3), EV(ii,3,jj)+EP(ii,3,jj)+SP(:,3)],'LineStyle','--');
             end
-            legendStrings = [legendStrings,{'EmitterView'}];
-            legendEntries(end+1) = plot3(EV(:,1)+EP(:,1),EV(:,2)+EP(:,2),EV(:,3)+EP(:,3),'bo','MarkerFaceColor',[1 1 1]);
-        end
-        
+            legendEntries(4) = scatter3(EV(:,1,jj)+EP(:,1,jj)+SP(:,1),EV(:,2,jj)+EP(:,2,jj)+SP(:,2),EV(:,3,jj)+EP(:,3,jj)+SP(:,3),'MarkerEdgeColor',[0 0.4470 0.7410],'MarkerFaceAlpha',0);
+        end        
         
         legend(legendEntries,legendStrings,'Location','NorthEastOutside');
         xlabel(['X / ' Obj.ListenerPosition_Units]);
