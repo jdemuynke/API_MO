@@ -26,12 +26,18 @@ GLOBAL_Title		m		attribute
 ListenerPosition	[0 0 0] 	m	IC, MC	double	ListenerPosition describes the real position of the microphone in the room (useful if positioned off the center of the loudspeakers arrangement for example). M represents the number of positions of the Ambisonics microphone
 ListenerPosition:Type	cartesian	m	  	attribute
 ListenerPosition:Units	meter	m	  	attribute
+ListenerPositionOffset	[0 0 0] 	m	IC, MC	double	In case the microphone is not located in the center of the loudspeakers arrangement (for example, simulteanous measurements with several microphones, some of which are off center)
+ListenerPositionOffset:Type	cartesian	m		attribute
+ListenerPositionOffset:Units	metre	m		attribute
 ListenerUp	[0 0 1]	m	IC, MC	double
 ListenerUp:Type	cartesian	m		attribute
 ListenerUp:Units	meter	m		attribute
 ListenerView	[0 0 1]	m	IC, MC	double
 ListenerView:Type	spherical	m		attribute
 ListenerView:Units	degree, degree, meter	m		attribute
+EmitterView	[1 0 0]	m	ECI, ECM	double
+EmitterView:Type	cartesian	m		attribute
+EmitterView:Units	meter	m		attribute
 ReceiverPosition	[0 0 0;0 0 0;0 0 0;0 0 0]	m	RCI	double	Not applicable  (receivers are spherical harmonics)
 ReceiverPosition:Type	cartesian	m	  	attribute	Not applicable  (receivers are spherical harmonics)
 ReceiverPosition:Units	meter	m		attribute	Not applicable  (receivers are spherical harmonics)
@@ -47,6 +53,12 @@ SourceView:Units	meter	m		attribute
 EmitterPosition	[0 0 1]	m	eCI, eCM	double	Each speaker position is represented as an emitter. Use EmitterPosition to represent the position of a particular speaker, wrt to SourcePosition which may contain the physical coordinates of the loudspeakers arrangement in the room. Size of EmitterPosition determines E.  M dimension not needed since there is always one only source (in this convention, M is not related to emitters but to receivers instead)
 EmitterPosition:Type	spherical	m	  	attribute
 EmitterPosition:Units	degree, degree, meter	m	  	attribute
+EmitterUp	[0 0 1]	m	ECI, ECM	double
+EmitterUp:Type	cartesian	m		attribute
+EmitterUp:Units	meter	m		attribute
+EmitterView	[1 0 0]	m	ECI, ECM	double
+EmitterView:Type	cartesian	m		attribute
+EmitterView:Units	meter	m		attribute
 Data.IR	0	m	mrEn	double	Impulse responses
 Data.IR:ChannelOrdering	acn	m		attribute	Describes the ordering relationship between Spherical Harmonics. Must be one of: 'acn', 'sid' or 'fuma'
 Data.IR:Normalization	sn3d	m		attribute	Describes the amplitude relationship between Spherical Harmonics. Must be one of: 'sn3d' , 'n3d', 'fuma' or 'maxn'
