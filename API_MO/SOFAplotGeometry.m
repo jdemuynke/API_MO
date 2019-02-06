@@ -143,7 +143,7 @@ switch Obj.GLOBAL_SOFAConventions
         for jj = 1:size(LV,3)
             for ii=1:size(LV,1)
                 % Scale size of ListenerView vector smaller
-                LV(ii,:,jj) = 1*LV(ii,:,jj)./norm(LV(ii,:,jj));
+                LV(ii,:,jj) = 0.5*LV(ii,:,jj)./norm(LV(ii,:,jj));
                 % Plot line for ListenerView vector
                 line([LP(ii,1,jj), LV(ii,1,jj)+LP(ii,1,jj)], [LP(ii,2,jj) LV(ii,2,jj)+LP(ii,2,jj)], [LP(ii,3,jj), LV(ii,3,jj)+LP(ii,3,jj)], 'Color',[0.8500 0.3250 0.0980]);
             end
