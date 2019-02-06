@@ -26,9 +26,6 @@ GLOBAL_Title		m		attribute
 ListenerPosition	[0 0 0] 	m	IC, MC	double	ListenerPosition describes the real position of the microphone in the room (useful if positioned off the center of the loudspeakers arrangement for example). M represents the number of positions of the Ambisonics microphone
 ListenerPosition:Type	cartesian	m	  	attribute
 ListenerPosition:Units	meter	m	  	attribute
-ListenerPositionOffset	[0 0 0] 	m	IC, MC	double	In case the microphone is not located in the center of the loudspeakers arrangement (for example, simulteanous measurements with several microphones, some of which are off center)
-ListenerPositionOffset:Type	cartesian	m		attribute
-ListenerPositionOffset:Units	metre	m		attribute
 ListenerUp	[0 0 1]	m	IC, MC	double
 ListenerUp:Type	cartesian	m		attribute
 ListenerUp:Units	meter	m		attribute
