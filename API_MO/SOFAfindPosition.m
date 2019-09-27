@@ -1,16 +1,16 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%   function index = SOFAfindPosition(Obj,azimuth_target,elevation_target)
+%   function index = SOFAfindPosition(Obj,azimuth_target,elevation_target, distance_target)
 %
 %   This function outputs the index of a HRIR in a SOFA file (of type 
 %   'SimpleFreeFieldHRIR') that is the closest to a desired incoming 
-%   direction described in spherical coordinates (the distance is
-%   voluntarily discarded).
+%   direction described in spherical coordinates.
 %
-%   Note if azimuth_target is an empty array, SOFAfindPosition() returns
+%   Note: if azimuth_target is an empty array, SOFAfindPosition() returns
 %   the index of all the HRIRs whose elevation angle is the closest
 %   available to the desired elevation angle (iso-elevation set of
-%   positions, no matter of the azimuth angle).
+%   positions, no matter of the azimuth angle), and vice-versa with
+%   elevation_traget being an empty array.
 %
 %   Julien De Muynke, 05/02/2019
 %   julien.demuynke@eurecat.org
@@ -31,7 +31,7 @@ else
     position_Units = Obj.SourcePosition_Units;
 end
 
-% Force coordinates system to spherical, force angles in degree
+% Force coordinates system to spherical, force angles to degree
 
 if strcmp(position_Type, 'cartesian')
     coord_sph = SOFAconvertCoordinates(position,'cartesian','spherical');
@@ -60,28 +60,44 @@ coord_sph(find(coord_sph(:,1)>180),1) = coord_sph(find(coord_sph(:,1)>180),1)-36
 
 if ~isempty(azimuth_target)
     
-    sphere_radius = max(unique(coord_sph(:,3)));
-    dist_min = 2*sphere_radius;
-    
-    for k = 1:length(azimuth_target)
+    if ~isempty(elevation_target)
         
-        for i = 1:Obj.API.M
+        sphere_radius = max(unique(coord_sph(:,3)));
+        dist_min = 2*sphere_radius;
+        
+        for k = 1:length(azimuth_target)
             
-            az_diff = abs(coord_sph(i,1) - azimuth_target(k));
-            if az_diff > 180
-                az_diff = 360 - az_diff;
+            dist = zeros(1,Obj.API.M);
+            for i = 1:Obj.API.M
+                
+                az_diff = abs(coord_sph(i,1) - azimuth_target(k));
+                if az_diff > 180
+                    az_diff = 360 - az_diff;
+                end
+                elev_diff = abs(coord_sph(i,2) - elevation_target);
+                
+                dist(i) = 2*sphere_radius*sqrt(1-(cosd(az_diff)+cosd(elev_diff))/2);
+                
+%                 if dist < dist_min
+%                     dist_min = dist;
+%                     target_index = i;
+%                 end
+                
             end
-            elev_diff = abs(coord_sph(i,2) - elevation_target);
-            
-            dist = 2*sphere_radius*sqrt(1-(cosd(az_diff)+cosd(elev_diff))/2);
-            
-            if dist < dist_min
-                dist_min = dist;
-                target_index = i;
-            end
-            
+            [~,target_index] = find(dist == min(dist));
+            index = [index target_index];
         end
-        index = [index target_index];
+        
+    else
+        
+        azim_diff = abs(round(coord_sph(:,1),1) - azimuth_target);
+        [mini,first_index] = min(azim_diff);
+        for i = 1:Obj.API.M
+            if(azim_diff(i)) == mini
+                index = [index i];
+            end
+        end
+        
     end
     
 else
