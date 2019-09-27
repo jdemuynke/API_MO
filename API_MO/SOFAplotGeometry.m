@@ -1,4 +1,4 @@
-function SOFAplotGeometry(Obj, index)
+function SOFAplotGeometry(Obj, index, plot_source_label)
 % SOFAplotGeometry(Obj) plots the geometry found in the Obj.
 %
 % SOFAplotGeometry(Obj, index) plots the geometry for the measurements
@@ -14,13 +14,17 @@ function SOFAplotGeometry(Obj, index)
 global legendEntries
 global legendStrings
 
+if nargin < 3
+    plot_source_label = 0;
+end
+
 switch Obj.GLOBAL_SOFAConventions
     %%
     case {'SimpleFreeFieldHRIR','SingleRoomDRIR','SimpleFreeFieldTF'}
         
         legendStrings = {'ListenerPosition','ListenerView','Receivers','SourcePosition'};
         
-        if ~exist('index','var')
+        if ~exist('index','var') || isempty(index)
             index=1:Obj.API.M;
         end
         
@@ -75,6 +79,11 @@ switch Obj.GLOBAL_SOFAConventions
         % Plot SourcePosition
         %if ~isfield(Obj,'GLOBAL_OriginalSOFAlabels')
         legendEntries(end+1)=plot3(S(:,1),S(:,2),S(:,3),'k.');
+        if plot_source_label
+            for k = 1:length(S)
+                text(S(k,1),S(k,2),S(k,3)+0.1,sprintf('%i',k));
+            end
+        end
         %     else
         %         labels = Obj.GLOBAL_OriginalSOFAlabels;
         %         legendStrings = legendStrings(1:end-1);
