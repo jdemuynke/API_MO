@@ -17,6 +17,8 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% TO DO: change the 'if nargin < 4' section by turning the coordinates to cartesian
+
 function index = SOFAfindPosition(Obj,azimuth_target, elevation_target, distance_target)
 
 index = [];
@@ -117,7 +119,8 @@ if nargin < 4
     
 else
     
-    [x_target, y_target, z_target] = sph2cart(azimuth_target*pi/180, elevation_target*pi/180, distance_target);
+    
+    
     
     if strcmp(position_Type, 'spherical')
         dist_min = max(position(:,3));
@@ -132,17 +135,37 @@ else
         coord_cartesian = position;
     end
     
-    for i = 1:Obj.API.M
+    if ~isempty(azimuth_target) && ~isempty(elevation_target)
         
-        dist = sqrt((x_target-coord_cartesian(i,1))^2+(y_target-coord_cartesian(i,2))^2+(z_target-coord_cartesian(i,3))^2);
+        [x_target, y_target, z_target] = sph2cart(azimuth_target*pi/180, elevation_target*pi/180, distance_target);
         
-        if dist < dist_min
-            index = i;
-            dist_min = dist;
-        elseif abs(dist - dist_min) <= 1e-3
-            index = [index i];
+        for i = 1:Obj.API.M
+            
+            dist = sqrt((x_target-coord_cartesian(i,1))^2+(y_target-coord_cartesian(i,2))^2+(z_target-coord_cartesian(i,3))^2);
+            
+            if dist < dist_min
+                index = i;
+                dist_min = dist;
+            elseif abs(dist - dist_min) <= 1e-3
+                index = [index i];
+            end
+            
         end
         
-    end
-    
+    else
+        
+        for i = 1:Obj.API.M
+            
+            dist = abs(distance_target - sqrt(coord_cartesian(i,1)^2+coord_cartesian(i,2)^2+coord_cartesian(i,3)^2));
+            
+            if dist < dist_min
+                index = i;
+                dist_min = dist;
+            elseif abs(dist - dist_min) <= 1e-3
+                index = [index i];
+            end
+            
+        end        
+        
+    end    
 end
