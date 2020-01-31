@@ -213,6 +213,7 @@ switch Obj.GLOBAL_SOFAConventions
                 % value in order to plot the associated mic position
                 
                 Midx = Obj.Midx;
+                nof_mic_pos = length(nonzeros(any(Midx,2)))
                 
                 if ~exist('index','var')
                     index = nonzeros(Midx);
@@ -254,8 +255,6 @@ switch Obj.GLOBAL_SOFAConventions
                 markers = {'+','x','v','s','d','*','^','>','<'};
                 legendEntries = [];
                 legendStrings = {};
-                
-                nof_mic_pos = length(nonzeros(Midx(:,1)));
                 
                 for mic_pos_idx = 1:nof_mic_pos
                     legendEntries(2*(mic_pos_idx-1)+1) = scatter3(LP(Midx(mic_pos_idx,1),1),LP(Midx(mic_pos_idx,1),2),LP(Midx(mic_pos_idx,1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
