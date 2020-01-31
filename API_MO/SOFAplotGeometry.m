@@ -25,11 +25,12 @@ switch Obj.GLOBAL_SOFAConventions
         legendStrings = {'ListenerPosition','ListenerView','Receivers','SourcePosition'};
         
         if ~exist('index','var') || isempty(index)
-            index=1:Obj.API.M;
+            index = nonzeros(Obj.Midx);
         end
         
         % Expand entries to the same number of measurement points
         Obj = SOFAexpand(Obj);
+        
         % See if the room geometry is specified
         if strcmp(Obj.GLOBAL_RoomType,'shoebox')
             figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
@@ -38,7 +39,12 @@ switch Obj.GLOBAL_SOFAConventions
             rectangle('Position',[Obj.RoomCornerA(1) ...
                 Obj.RoomCornerA(2) ...
                 Obj.RoomCornerB(1)-Obj.RoomCornerA(1) ...
-                Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]);
+                Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]);hold on;
+            rectangle('Position',[Obj.RoomCornerA(1) ...
+                Obj.RoomCornerA(2) ...
+                Obj.RoomCornerB(1)-Obj.RoomCornerA(1) ...
+                Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]);hold on;
+            
         else
             figure; hold on;
         end
@@ -106,95 +112,167 @@ switch Obj.GLOBAL_SOFAConventions
         
     case {'AmbisonicsDRIR'}
         
-        legendStrings = {'ListenerPosition','ListenerView','EmitterPosition','EmitterView'};
-        
-        if ~exist('index','var')
-            index=1:Obj.API.E;
+        switch Obj.GLOBAL_SOFAConventionsVersion
+            
+            case '1.0'
+                
+                legendStrings = {'ListenerPosition','ListenerView','EmitterPosition','EmitterView'};
+                
+                if ~exist('index','var')
+                    index=1:Obj.API.E;
+                end
+                
+                
+                % Expand entries to the same number of measurement points
+                %Obj = SOFAexpand(Obj);
+                % See if the room geometry is specified
+                if strcmp(Obj.GLOBAL_RoomType,'shoebox')
+                    figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
+                    box on; hold on; h=[];
+                    % plot the room
+                    rectangle('Position',[Obj.RoomCornerA(1) ...
+                        Obj.RoomCornerA(2) ...
+                        Obj.RoomCornerB(1)-Obj.RoomCornerA(1) ...
+                        Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]);
+                else
+                    figure; hold on;
+                end
+                legendEntries = [];
+                title(sprintf('%s, %s, %s',Obj.GLOBAL_SOFAConventions,Obj.GLOBAL_RoomType,Obj.GLOBAL_DatabaseName));
+                
+                LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
+                LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
+                
+                %         if size(LP,1) == 1
+                %             E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
+                %         else
+                %             if ndims(squeeze(Obj.EmitterPosition)) == 3
+                %                 E = SOFAconvertCoordinates(transpose(reshape(permute(Obj.EmitterPosition,[2 1 3]),3,Obj.API.E*Obj.API.M)),Obj.EmitterPosition_Type,'cartesian');
+                %             else
+                %                 E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:,:),Obj.EmitterPosition_Type,'cartesian');
+                %             end
+                %         end
+                
+                % Plot ListenerPosition
+                for jj = 1:size(LP,3)
+                    legendEntries(1) = scatter3(LP(:,1,jj),LP(:,2,jj),LP(:,3,jj),'filled','MarkerFaceColor',[0.8500 0.3250 0.0980]);
+                end
+                
+                % Plot ListenerView
+                for jj = 1:size(LV,3)
+                    for ii=1:size(LV,1)
+                        % Scale size of ListenerView vector smaller
+                        LV(ii,:,jj) = 0.5*LV(ii,:,jj)./norm(LV(ii,:,jj));
+                        % Plot line for ListenerView vector
+                        line([LP(ii,1,jj), LV(ii,1,jj)+LP(ii,1,jj)], [LP(ii,2,jj) LV(ii,2,jj)+LP(ii,2,jj)], [LP(ii,3,jj), LV(ii,3,jj)+LP(ii,3,jj)], 'Color',[0.8500 0.3250 0.0980]);
+                    end
+                    legendEntries(2) = scatter3(LV(:,1,jj)+LP(:,1,jj),LV(:,2,jj)+LP(:,2,jj),LV(:,3,jj)+LP(:,3,jj),'MarkerEdgeColor',[0.8500 0.3250 0.0980],'MarkerFaceAlpha',0);
+                end
+                
+                SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
+                EP = SOFAconvertCoordinates(Obj.EmitterPosition,Obj.EmitterPosition_Type,'cartesian');
+                
+                % Plot EmitterPosition
+                for jj = 1:size(EP,3)
+                    legendEntries(3) = scatter3(EP(:,1,jj)+SP(:,1),EP(:,2,jj)+SP(:,2),EP(:,3,jj)+SP(:,3),'filled','MarkerFaceColor',[0 0.4470 0.7410]);
+                end
+                
+                EV = SOFAconvertCoordinates(Obj.EmitterView,Obj.EmitterView_Type,'cartesian');
+                
+                %Plot EmitterView
+                for jj = 1:size(EV,3)
+                    for ii=1:size(EV,1)
+                        % Scale size of EmitterView vector smaller
+                        EV(ii,:,jj) = 0.5*EV(ii,:,jj)./norm(EV(ii,:,jj));
+                        % Plot line for EmitterView vector
+                        line([EP(ii,1,jj)+SP(:,1), EV(ii,1,jj)+EP(ii,1,jj)+SP(:,1)], [EP(ii,2,jj)+SP(:,2) EV(ii,2,jj)+EP(ii,2,jj)+SP(:,2)], [EP(ii,3,jj)+SP(:,3), EV(ii,3,jj)+EP(ii,3,jj)+SP(:,3)],'LineStyle','--');
+                    end
+                    legendEntries(4) = scatter3(EV(:,1,jj)+EP(:,1,jj)+SP(:,1),EV(:,2,jj)+EP(:,2,jj)+SP(:,2),EV(:,3,jj)+EP(:,3,jj)+SP(:,3),'MarkerEdgeColor',[0 0.4470 0.7410],'MarkerFaceAlpha',0);
+                end
+                
+                legend(legendEntries,legendStrings,'Location','NorthEastOutside');
+                xlabel(['X / ' Obj.ListenerPosition_Units]);
+                ylabel(['Y / ' Obj.ListenerPosition_Units]);
+                zlabel(['Z / ' Obj.ListenerPosition_Units]);
+                
+                view(-30,25);
+                % Set fixed aspect ratio
+                axis equal;
+                
+                if strcmp(Obj.GLOBAL_RoomType,'shoebox')
+                    xlim([0 Obj.RoomCornerB(1)]);
+                    ylim([0 Obj.RoomCornerB(2)]);
+                    zlim([0 Obj.RoomCornerB(3)]);
+                end
+                
+            case '2.0'
+                
+                % Idea how to restrict the plot to some particular positions: plot
+                % the source positions that correspond to the values in 'index',
+                % and look for the corresponding 'row' of Midx containing this
+                % value in order to plot the associated mic position
+                
+                Midx = Obj.Midx;
+                
+                if ~exist('index','var')
+                    index = nonzeros(Midx);
+                end
+                
+                % Expand entries to the same number of measurement points
+                % See if the room geometry is specified
+                if strcmp(Obj.GLOBAL_RoomType,'shoebox')
+                    figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
+                    box on; hold on; h=[];
+                    % plot the room
+                    A1 = Obj.RoomCornerA;
+                    B1 = Obj.RoomCornerB;
+                    A2 = [A1(1) B1(2) A1(3)];
+                    B2 = [B1(1) A1(2) B1(3)];
+                    A3 = [A1(1) B1(2) B1(3)];
+                    B3 = [B1(1) A1(2) A1(3)];
+                    A4 = [A1(1) A1(2) B1(3)];
+                    B4 = [B1(1) B1(2) A1(3)];
+                    patch('Faces',[1 2 3 4;5 6 7 8;1 2 8 7;4 3 5 6;1 4 6 7;2 3 5 8],'Vertices',[A1;A2;A3;A4;B1;B2;B3;B4]);alpha(0.05);
+                else
+                    figure; hold on;
+                end
+                view(-45,30);
+                xlim([A1(1)-0.5 B1(1)+0.5]);
+                ylim([A1(2)-0.5 B1(2)+0.5]);
+                zlim([A1(3)-0.5 B1(3)+0.5]);
+                title(sprintf('%s',Obj.GLOBAL_DatabaseName));
+                
+                LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
+                LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
+                
+                SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
+                SV = SOFAconvertCoordinates(Obj.SourceView,Obj.SourceView_Type,'cartesian');
+                
+                
+                % Plot Source and Listener Positions, plus Source and Listener View
+                
+                markers = {'+','x','v','s','d','*','^','>','<'};
+                legendEntries = [];
+                legendStrings = {};
+                
+                nof_mic_pos = length(nonzeros(Midx(:,1)));
+                
+                for mic_pos_idx = 1:nof_mic_pos
+                    legendEntries(2*(mic_pos_idx-1)+1) = scatter3(LP(Midx(mic_pos_idx,1),1),LP(Midx(mic_pos_idx,1),2),LP(Midx(mic_pos_idx,1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
+                    line([LP(Midx(mic_pos_idx,1),1), LP(Midx(mic_pos_idx,1),1)+LV(Midx(mic_pos_idx,1),1)], [LP(Midx(mic_pos_idx,1),2), LP(Midx(mic_pos_idx,1),2)+LV(Midx(mic_pos_idx,1),2)],[LP(Midx(mic_pos_idx,1),3), LP(Midx(mic_pos_idx,1),3)+LV(Midx(mic_pos_idx,1),3)], 'Color','r','LineStyle','--');
+                    scatter3(LP(Midx(mic_pos_idx,1),1)+LV(Midx(mic_pos_idx,1),1),LP(Midx(mic_pos_idx,1),2)+LV(Midx(mic_pos_idx,1),2),LP(Midx(mic_pos_idx,1),3)+LV(Midx(mic_pos_idx,1),3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
+                    legendStrings{2*(mic_pos_idx-1)+1} = sprintf('Listener position %i',mic_pos_idx);
+                    for lpk_pos_idx = find(Midx(mic_pos_idx,:)~=0)
+                        legendEntries(2*mic_pos_idx) = scatter3(SP(Midx(mic_pos_idx,lpk_pos_idx),1),SP(Midx(mic_pos_idx,lpk_pos_idx),2),SP(Midx(mic_pos_idx,lpk_pos_idx),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','k');
+                        line([SP(Midx(mic_pos_idx,lpk_pos_idx),1), SP(Midx(mic_pos_idx,lpk_pos_idx),1)+SV(Midx(mic_pos_idx,lpk_pos_idx),1)], [SP(Midx(mic_pos_idx,lpk_pos_idx),2), SP(Midx(mic_pos_idx,lpk_pos_idx),2)+SV(Midx(mic_pos_idx,lpk_pos_idx),2)],[SP(Midx(mic_pos_idx,lpk_pos_idx),3), SP(Midx(mic_pos_idx,lpk_pos_idx),3)+SV(Midx(mic_pos_idx,lpk_pos_idx),3)], 'Color','k','LineStyle','--');
+                        scatter3(SP(Midx(mic_pos_idx,lpk_pos_idx),1)+SV(Midx(mic_pos_idx,lpk_pos_idx),1),SP(Midx(mic_pos_idx,lpk_pos_idx),2)+SV(Midx(mic_pos_idx,lpk_pos_idx),2),SP(Midx(mic_pos_idx,lpk_pos_idx),3)+SV(Midx(mic_pos_idx,lpk_pos_idx),3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
+                        legendStrings{2*mic_pos_idx} = sprintf('Source positions associated to Listener position %i',mic_pos_idx);
+                    end
+                end
+                axis equal;
+                legend(legendEntries,legendStrings);
+                
         end
-        
-        
-        % Expand entries to the same number of measurement points
-        %Obj = SOFAexpand(Obj);
-        % See if the room geometry is specified
-        if strcmp(Obj.GLOBAL_RoomType,'shoebox')
-            figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
-            box on; hold on; h=[];
-            % plot the room
-            rectangle('Position',[Obj.RoomCornerA(1) ...
-                Obj.RoomCornerA(2) ...
-                Obj.RoomCornerB(1)-Obj.RoomCornerA(1) ...
-                Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]);
-        else
-            figure; hold on;
-        end
-        legendEntries = [];
-        title(sprintf('%s, %s, %s',Obj.GLOBAL_SOFAConventions,Obj.GLOBAL_RoomType,Obj.GLOBAL_DatabaseName));
-        
-        LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
-        LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
-        
-%         if size(LP,1) == 1
-%             E = SOFAconvertCoordinates(Obj.EmitterPosition(index,:),Obj.EmitterPosition_Type,'cartesian');
-%         else
-%             if ndims(squeeze(Obj.EmitterPosition)) == 3
-%                 E = SOFAconvertCoordinates(transpose(reshape(permute(Obj.EmitterPosition,[2 1 3]),3,Obj.API.E*Obj.API.M)),Obj.EmitterPosition_Type,'cartesian');
-%             else
-%                 E  = SOFAconvertCoordinates(Obj.EmitterPosition(index,:,:),Obj.EmitterPosition_Type,'cartesian');
-%             end
-%         end
-        
-        % Plot ListenerPosition
-        for jj = 1:size(LP,3)
-            legendEntries(1) = scatter3(LP(:,1,jj),LP(:,2,jj),LP(:,3,jj),'filled','MarkerFaceColor',[0.8500 0.3250 0.0980]);
-        end
-        
-        % Plot ListenerView
-        for jj = 1:size(LV,3)
-            for ii=1:size(LV,1)
-                % Scale size of ListenerView vector smaller
-                LV(ii,:,jj) = 0.5*LV(ii,:,jj)./norm(LV(ii,:,jj));
-                % Plot line for ListenerView vector
-                line([LP(ii,1,jj), LV(ii,1,jj)+LP(ii,1,jj)], [LP(ii,2,jj) LV(ii,2,jj)+LP(ii,2,jj)], [LP(ii,3,jj), LV(ii,3,jj)+LP(ii,3,jj)], 'Color',[0.8500 0.3250 0.0980]);
-            end
-            legendEntries(2) = scatter3(LV(:,1,jj)+LP(:,1,jj),LV(:,2,jj)+LP(:,2,jj),LV(:,3,jj)+LP(:,3,jj),'MarkerEdgeColor',[0.8500 0.3250 0.0980],'MarkerFaceAlpha',0);
-        end
-        
-        SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
-        EP = SOFAconvertCoordinates(Obj.EmitterPosition,Obj.EmitterPosition_Type,'cartesian');
-        
-        % Plot EmitterPosition
-        for jj = 1:size(EP,3)
-            legendEntries(3) = scatter3(EP(:,1,jj)+SP(:,1),EP(:,2,jj)+SP(:,2),EP(:,3,jj)+SP(:,3),'filled','MarkerFaceColor',[0 0.4470 0.7410]);
-        end
-        
-        EV = SOFAconvertCoordinates(Obj.EmitterView,Obj.EmitterView_Type,'cartesian');
-        
-        %Plot EmitterView
-        for jj = 1:size(EV,3)
-            for ii=1:size(EV,1)
-                % Scale size of EmitterView vector smaller
-                EV(ii,:,jj) = 0.5*EV(ii,:,jj)./norm(EV(ii,:,jj));
-                % Plot line for EmitterView vector
-                line([EP(ii,1,jj)+SP(:,1), EV(ii,1,jj)+EP(ii,1,jj)+SP(:,1)], [EP(ii,2,jj)+SP(:,2) EV(ii,2,jj)+EP(ii,2,jj)+SP(:,2)], [EP(ii,3,jj)+SP(:,3), EV(ii,3,jj)+EP(ii,3,jj)+SP(:,3)],'LineStyle','--');
-            end
-            legendEntries(4) = scatter3(EV(:,1,jj)+EP(:,1,jj)+SP(:,1),EV(:,2,jj)+EP(:,2,jj)+SP(:,2),EV(:,3,jj)+EP(:,3,jj)+SP(:,3),'MarkerEdgeColor',[0 0.4470 0.7410],'MarkerFaceAlpha',0);
-        end        
-        
-        legend(legendEntries,legendStrings,'Location','NorthEastOutside');
-        xlabel(['X / ' Obj.ListenerPosition_Units]);
-        ylabel(['Y / ' Obj.ListenerPosition_Units]);
-        zlabel(['Z / ' Obj.ListenerPosition_Units]);
-        
-        view(-30,25);
-        % Set fixed aspect ratio
-        axis equal;
-        
-        if strcmp(Obj.GLOBAL_RoomType,'shoebox')            
-            xlim([0 Obj.RoomCornerB(1)]);
-            ylim([0 Obj.RoomCornerB(2)]);
-            zlim([0 Obj.RoomCornerB(3)]);   
-        end
-        
         
     otherwise
         error('This SOFAConventions is not supported for plotting');
