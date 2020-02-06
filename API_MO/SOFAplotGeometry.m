@@ -25,7 +25,7 @@ switch Obj.GLOBAL_SOFAConventions
         legendStrings = {'ListenerPosition','ListenerView','Receivers','SourcePosition'};
         
         if ~exist('index','var') || isempty(index)
-            index = nonzeros(Obj.Midx);
+            index = nonzeros(Obj.ListenerSourcePairIndex);
         end
         
         % Expand entries to the same number of measurement points
@@ -209,21 +209,23 @@ switch Obj.GLOBAL_SOFAConventions
                 
                 % Idea how to restrict the plot to some particular positions: plot
                 % the source positions that correspond to the values in 'index',
-                % and look for the corresponding 'row' of Midx containing this
+                % and look for the corresponding 'row' of ListenerSourcePairIndex containing this
                 % value in order to plot the associated mic position
                 
-                Midx = Obj.Midx;
-                nof_mic_pos = length(nonzeros(any(Midx,2)))
+                ListenerSourcePairIndex = Obj.ListenerSourcePairIndex;
+                M = size(ListenerSourcePairIndex,1);
+                nof_mic_pos = length(nonzeros(any(ListenerSourcePairIndex,2)));
                 
                 if ~exist('index','var')
-                    index = nonzeros(Midx);
+                    index = (1:nof_mic_pos);
                 end
                 
                 % Expand entries to the same number of measurement points
                 % See if the room geometry is specified
-                if strcmp(Obj.GLOBAL_RoomType,'shoebox')
+                if strcmp(Obj.GLOBAL_RoomType,'shoebox') && (any(Obj.RoomCornerA) || any(Obj.RoomCornerB))
                     figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
                     box on; hold on; h=[];
+                    title(sprintf('%s',Obj.GLOBAL_DatabaseName));
                     % plot the room
                     A1 = Obj.RoomCornerA;
                     B1 = Obj.RoomCornerB;
@@ -238,37 +240,49 @@ switch Obj.GLOBAL_SOFAConventions
                     figure; hold on;
                 end
                 view(-45,30);
-                xlim([A1(1)-0.5 B1(1)+0.5]);
-                ylim([A1(2)-0.5 B1(2)+0.5]);
-                zlim([A1(3)-0.5 B1(3)+0.5]);
                 title(sprintf('%s',Obj.GLOBAL_DatabaseName));
                 
                 LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
                 LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
+                if size(LV,1) == 1
+                    LV = repmat(LV,M,1);
+                end
                 
                 SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
                 SV = SOFAconvertCoordinates(Obj.SourceView,Obj.SourceView_Type,'cartesian');
-                
+                if size(SV,1) == 1
+                    SV = repmat(SV,M,1);
+                end
                 
                 % Plot Source and Listener Positions, plus Source and Listener View
                 
                 markers = {'+','x','v','s','d','*','^','>','<'};
                 legendEntries = [];
                 legendStrings = {};
+                legend_idx = 1;
                 
-                for mic_pos_idx = 1:nof_mic_pos
-                    legendEntries(2*(mic_pos_idx-1)+1) = scatter3(LP(Midx(mic_pos_idx,1),1),LP(Midx(mic_pos_idx,1),2),LP(Midx(mic_pos_idx,1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
-                    line([LP(Midx(mic_pos_idx,1),1), LP(Midx(mic_pos_idx,1),1)+LV(Midx(mic_pos_idx,1),1)], [LP(Midx(mic_pos_idx,1),2), LP(Midx(mic_pos_idx,1),2)+LV(Midx(mic_pos_idx,1),2)],[LP(Midx(mic_pos_idx,1),3), LP(Midx(mic_pos_idx,1),3)+LV(Midx(mic_pos_idx,1),3)], 'Color','r','LineStyle','--');
-                    scatter3(LP(Midx(mic_pos_idx,1),1)+LV(Midx(mic_pos_idx,1),1),LP(Midx(mic_pos_idx,1),2)+LV(Midx(mic_pos_idx,1),2),LP(Midx(mic_pos_idx,1),3)+LV(Midx(mic_pos_idx,1),3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
-                    legendStrings{2*(mic_pos_idx-1)+1} = sprintf('Listener position %i',mic_pos_idx);
-                    for lpk_pos_idx = find(Midx(mic_pos_idx,:)~=0)
-                        legendEntries(2*mic_pos_idx) = scatter3(SP(Midx(mic_pos_idx,lpk_pos_idx),1),SP(Midx(mic_pos_idx,lpk_pos_idx),2),SP(Midx(mic_pos_idx,lpk_pos_idx),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','k');
-                        line([SP(Midx(mic_pos_idx,lpk_pos_idx),1), SP(Midx(mic_pos_idx,lpk_pos_idx),1)+SV(Midx(mic_pos_idx,lpk_pos_idx),1)], [SP(Midx(mic_pos_idx,lpk_pos_idx),2), SP(Midx(mic_pos_idx,lpk_pos_idx),2)+SV(Midx(mic_pos_idx,lpk_pos_idx),2)],[SP(Midx(mic_pos_idx,lpk_pos_idx),3), SP(Midx(mic_pos_idx,lpk_pos_idx),3)+SV(Midx(mic_pos_idx,lpk_pos_idx),3)], 'Color','k','LineStyle','--');
-                        scatter3(SP(Midx(mic_pos_idx,lpk_pos_idx),1)+SV(Midx(mic_pos_idx,lpk_pos_idx),1),SP(Midx(mic_pos_idx,lpk_pos_idx),2)+SV(Midx(mic_pos_idx,lpk_pos_idx),2),SP(Midx(mic_pos_idx,lpk_pos_idx),3)+SV(Midx(mic_pos_idx,lpk_pos_idx),3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
-                        legendStrings{2*mic_pos_idx} = sprintf('Source positions associated to Listener position %i',mic_pos_idx);
+                for mic_pos_idx = index                    
+                    
+                    LP_idx = ListenerSourcePairIndex(mic_pos_idx,~isnan(ListenerSourcePairIndex(mic_pos_idx,:)));
+                    legendEntries(2*(legend_idx-1)+1) = scatter3(LP(LP_idx(1),1),LP(LP_idx(1),2),LP(LP_idx(1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
+                    line([LP(LP_idx(1),1), LP(LP_idx(1),1)+LV(LP_idx(1),1)], [LP(LP_idx(1),2), LP(LP_idx(1),2)+LV(LP_idx(1),2)],[LP(LP_idx(1),3), LP(LP_idx(1),3)+LV(LP_idx(1),3)], 'Color','r','LineStyle','--');
+                    scatter3(LP(LP_idx(1),1)+LV(LP_idx(1),1),LP(LP_idx(1),2)+LV(LP_idx(1),2),LP(LP_idx(1),3)+LV(LP_idx(1),3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
+                    legendStrings{2*(legend_idx-1)+1} = sprintf('Listener position %i',mic_pos_idx);
+                    
+                    for lpk_pos_idx = LP_idx
+                        legendEntries(2*legend_idx) = scatter3(SP(lpk_pos_idx,1),SP(lpk_pos_idx,2),SP(lpk_pos_idx,3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','k');
+                        line([SP(lpk_pos_idx,1), SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1)], [SP(lpk_pos_idx,2), SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2)],[SP(lpk_pos_idx,3), SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3)], 'Color','k','LineStyle','--');
+                        scatter3(SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1),SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2),SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
+                        legendStrings{2*legend_idx} = sprintf('Source positions associated to Listener position %i',mic_pos_idx);
                     end
+                    
+                    legend_idx = legend_idx + 1;
+                    
                 end
                 axis equal;
+                xlim([A1(1)-0.5 B1(1)+0.5]);
+                ylim([A1(2)-0.5 B1(2)+0.5]);
+                zlim([A1(3)-0.5 B1(3)+0.5]);
                 legend(legendEntries,legendStrings);
                 
         end
