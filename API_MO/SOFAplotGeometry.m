@@ -287,6 +287,83 @@ switch Obj.GLOBAL_SOFAConventions
                 
         end
         
+    case 'MultiPerspectiveAmbisonicRIR'
+        
+        ListenerSourcePairIndex = Obj.ListenerSourcePairIndex;
+        M = size(ListenerSourcePairIndex,1);
+        nof_mic_pos = length(nonzeros(any(ListenerSourcePairIndex,2)));
+        
+        if ~exist('index','var')
+            index = (1:nof_mic_pos);
+        end
+        
+        % Expand entries to the same number of measurement points
+        % See if the room geometry is specified
+        if strcmp(Obj.GLOBAL_RoomType,'shoebox') && (any(Obj.RoomCornerA) || any(Obj.RoomCornerB))
+            figure('Position',[1 1 (Obj.RoomCornerB(1)-Obj.RoomCornerA(1))*1.2 Obj.RoomCornerB(2)-Obj.RoomCornerA(2)]*100);
+            box on; hold on; h=[];
+            title(sprintf('%s',Obj.GLOBAL_DatabaseName));
+            % plot the room
+            A1 = Obj.RoomCornerA;
+            B1 = Obj.RoomCornerB;
+            A2 = [A1(1) B1(2) A1(3)];
+            B2 = [B1(1) A1(2) B1(3)];
+            A3 = [A1(1) B1(2) B1(3)];
+            B3 = [B1(1) A1(2) A1(3)];
+            A4 = [A1(1) A1(2) B1(3)];
+            B4 = [B1(1) B1(2) A1(3)];
+            patch('Faces',[1 2 3 4;5 6 7 8;1 2 8 7;4 3 5 6;1 4 6 7;2 3 5 8],'Vertices',[A1;A2;A3;A4;B1;B2;B3;B4]);alpha(0.05);
+        else
+            figure; hold on;
+        end
+        view(-45,30);
+        title(sprintf('%s',Obj.GLOBAL_DatabaseName));
+        
+        LP = SOFAconvertCoordinates(Obj.ListenerPosition,Obj.ListenerPosition_Type,'cartesian');
+        LV = SOFAconvertCoordinates(Obj.ListenerView,Obj.ListenerView_Type,'cartesian');
+        if size(LV,1) == 1
+            LV = repmat(LV,M,1);
+        end
+        
+        SP = SOFAconvertCoordinates(Obj.SourcePosition,Obj.SourcePosition_Type,'cartesian');
+        SV = SOFAconvertCoordinates(Obj.SourceView,Obj.SourceView_Type,'cartesian');
+        if size(SV,1) == 1
+            SV = repmat(SV,M,1);
+        end
+        
+        % Plot Source and Listener Positions, plus Source and Listener View
+        
+        markers = {'+','x','v','s','d','*','^','>','<'};
+        legendEntries = [];
+        legendStrings = {};
+        legend_idx = 1;
+        
+        for mic_pos_idx = index
+            
+            LP_idx = ListenerSourcePairIndex(mic_pos_idx,find(ListenerSourcePairIndex(mic_pos_idx,:)~=0));
+            legendEntries(2*(legend_idx-1)+1) = scatter3(LP(LP_idx(1),1),LP(LP_idx(1),2),LP(LP_idx(1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
+            line([LP(LP_idx(1),1), LP(LP_idx(1),1)+LV(LP_idx(1),1)], [LP(LP_idx(1),2), LP(LP_idx(1),2)+LV(LP_idx(1),2)],[LP(LP_idx(1),3), LP(LP_idx(1),3)+LV(LP_idx(1),3)], 'Color','r','LineStyle','--');
+            scatter3(LP(LP_idx(1),1)+LV(LP_idx(1),1),LP(LP_idx(1),2)+LV(LP_idx(1),2),LP(LP_idx(1),3)+LV(LP_idx(1),3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
+            legendStrings{2*(legend_idx-1)+1} = sprintf('Listener position %i',mic_pos_idx);
+            
+            for lpk_pos_idx = LP_idx
+                legendEntries(2*legend_idx) = scatter3(SP(lpk_pos_idx,1),SP(lpk_pos_idx,2),SP(lpk_pos_idx,3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','k');
+                line([SP(lpk_pos_idx,1), SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1)], [SP(lpk_pos_idx,2), SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2)],[SP(lpk_pos_idx,3), SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3)], 'Color','k','LineStyle','--');
+                scatter3(SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1),SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2),SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
+                legendStrings{2*legend_idx} = sprintf('Source positions associated to Listener position %i',mic_pos_idx);
+            end
+            
+            legend_idx = legend_idx + 1;
+            
+        end
+        axis equal;
+        if strcmp(Obj.GLOBAL_RoomType,'shoebox') && (any(Obj.RoomCornerA) || any(Obj.RoomCornerB))
+            xlim([A1(1)-0.5 B1(1)+0.5]);
+            ylim([A1(2)-0.5 B1(2)+0.5]);
+            zlim([A1(3)-0.5 B1(3)+0.5]);
+        end
+        legend(legendEntries,legendStrings);
+        
     otherwise
         error('This SOFAConventions is not supported for plotting');
 end
