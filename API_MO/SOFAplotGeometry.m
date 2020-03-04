@@ -25,7 +25,7 @@ switch Obj.GLOBAL_SOFAConventions
         legendStrings = {'ListenerPosition','ListenerView','Receivers','SourcePosition'};
         
         if ~exist('index','var') || isempty(index)
-            index = nonzeros(Obj.ListenerSourcePairIndex);
+            index=1:Obj.API.M;
         end
         
         % Expand entries to the same number of measurement points
@@ -289,14 +289,10 @@ switch Obj.GLOBAL_SOFAConventions
         
     case 'MultiPerspectiveAmbisonicRIR'
         
-        ListenerSourcePairIndex = Obj.ListenerSourcePairIndex;
-        M = size(ListenerSourcePairIndex,1);
-        nof_mic_pos = length(nonzeros(any(ListenerSourcePairIndex,2)));
-        
-        if ~exist('index','var')
-            index = (1:nof_mic_pos);
-        end
-        
+        M = Obj.API.M;        
+        [mic_pos,mic_pos_idx] = unique(Obj.ListenerPosition,'rows');
+        nof_mic_pos = length(mic_pos);
+
         % Expand entries to the same number of measurement points
         % See if the room geometry is specified
         if strcmp(Obj.GLOBAL_RoomType,'shoebox') && (any(Obj.RoomCornerA) || any(Obj.RoomCornerB))
@@ -338,19 +334,19 @@ switch Obj.GLOBAL_SOFAConventions
         legendStrings = {};
         legend_idx = 1;
         
-        for mic_pos_idx = index
+        for i = transpose(mic_pos_idx)
             
-            LP_idx = ListenerSourcePairIndex(mic_pos_idx,find(ListenerSourcePairIndex(mic_pos_idx,:)~=0));
-            legendEntries(2*(legend_idx-1)+1) = scatter3(LP(LP_idx(1),1),LP(LP_idx(1),2),LP(LP_idx(1),3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','r');
-            line([LP(LP_idx(1),1), LP(LP_idx(1),1)+LV(LP_idx(1),1)], [LP(LP_idx(1),2), LP(LP_idx(1),2)+LV(LP_idx(1),2)],[LP(LP_idx(1),3), LP(LP_idx(1),3)+LV(LP_idx(1),3)], 'Color','r','LineStyle','--');
-            scatter3(LP(LP_idx(1),1)+LV(LP_idx(1),1),LP(LP_idx(1),2)+LV(LP_idx(1),2),LP(LP_idx(1),3)+LV(LP_idx(1),3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
-            legendStrings{2*(legend_idx-1)+1} = sprintf('Listener position %i',mic_pos_idx);
+            legendEntries(2*(legend_idx-1)+1) = scatter3(LP(i,1),LP(i,2),LP(i,3),80,char(markers(legend_idx)),'MarkerEdgeColor','r');
+            line([LP(i,1), LP(i,1)+LV(i,1)], [LP(i,2), LP(i,2)+LV(i,2)],[LP(i,3), LP(i,3)+LV(i,3)], 'Color','r','LineStyle','--');
+            scatter3(LP(i,1)+LV(i,1),LP(i,2)+LV(i,2),LP(i,3)+LV(i,3),20,'MarkerEdgeColor','r','MarkerFaceAlpha',0);
+            legendStrings{2*(legend_idx-1)+1} = sprintf('Listener position %i',legend_idx);
             
-            for lpk_pos_idx = LP_idx
-                legendEntries(2*legend_idx) = scatter3(SP(lpk_pos_idx,1),SP(lpk_pos_idx,2),SP(lpk_pos_idx,3),80,char(markers(mic_pos_idx)),'MarkerEdgeColor','k');
-                line([SP(lpk_pos_idx,1), SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1)], [SP(lpk_pos_idx,2), SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2)],[SP(lpk_pos_idx,3), SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3)], 'Color','k','LineStyle','--');
-                scatter3(SP(lpk_pos_idx,1)+SV(lpk_pos_idx,1),SP(lpk_pos_idx,2)+SV(lpk_pos_idx,2),SP(lpk_pos_idx,3)+SV(lpk_pos_idx,3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
-                legendStrings{2*legend_idx} = sprintf('Source positions associated to Listener position %i',mic_pos_idx);
+            lpk_pos_idx = find(ismember(Obj.ListenerPosition,mic_pos(i,:),'row'));
+            for j = lpk_pos_idx
+                legendEntries(2*legend_idx) = scatter3(SP(j,1),SP(j,2),SP(j,3),80,char(markers(legend_idx)),'MarkerEdgeColor','k');
+                line(transpose([SP(j,1), SP(j,1)+SV(j,1)]), transpose([SP(j,2), SP(j,2)+SV(j,2)]),transpose([SP(j,3), SP(j,3)+SV(j,3)]), 'Color','k','LineStyle','--');
+                scatter3(SP(j,1)+SV(j,1),SP(j,2)+SV(j,2),SP(j,3)+SV(j,3),20,'MarkerEdgeColor','k','MarkerFaceAlpha',0);
+                legendStrings{2*legend_idx} = sprintf('Source positions associated to Listener position %i',legend_idx);
             end
             
             legend_idx = legend_idx + 1;
@@ -362,7 +358,8 @@ switch Obj.GLOBAL_SOFAConventions
             ylim([A1(2)-0.5 B1(2)+0.5]);
             zlim([A1(3)-0.5 B1(3)+0.5]);
         end
-        legend(legendEntries,legendStrings);
+        leg = legend(legendEntries,legendStrings);
+        leg.ItemHitFcn = @marker_highlight;
         
     otherwise
         error('This SOFAConventions is not supported for plotting');
@@ -380,3 +377,15 @@ if ~strcmp(Obj.GLOBAL_RoomType,'shoebox')
     
 end
 grid on;
+
+function marker_highlight(src,event)
+% This callback causes the line to "blink"
+
+for id = 1:3                        % Repeat 3 times
+    event.Peer.LineWidth = 3;       % Set line width to 3
+    event.Peer.SizeData = 240;
+    pause(0.2)                      % Pause 0.2 seconds
+    event.Peer.LineWidth = 0.5;     % Set line width to 0.5
+    event.Peer.SizeData = 80;
+    pause(0.2)                      % Pause 0.2 seconds
+end
