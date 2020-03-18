@@ -126,16 +126,20 @@ end
 %% Update the size of the longest string
 if Smax>0, Obj.API.S=Smax; end
 
-%% Check and correct if necessary the fields receiverPosition and GLOBAL_RoomType
+%% Check and correct if necessary the fields receiverPosition and GLOBAL_RoomType (Bug fix for libmySOFA)
 
-if Obj.ReceiverPosition(1,2) > Obj.ReceiverPosition(2,2)
-    fprintf('ReceiverPosition in descending order. Corrected.\n');
-    Obj.ReceiverPosition = flipud(Obj.ReceiverPosition);
-end
-
-if ~strcmp(Obj.GLOBAL_RoomType,'free field')
-	fprintf('GLOBAL_RoomType not free field. Corrected.\n');
-    Obj.GLOBAL_RoomType = 'free field';
+if strcmp(Obj.GLOBAL_SOFAConventions,'SimpleFreeFieldHRIR')
+    
+    if Obj.ReceiverPosition(1,2) > Obj.ReceiverPosition(2,2)
+        fprintf('ReceiverPosition in descending order. Corrected.\n');
+        Obj.ReceiverPosition = flipud(Obj.ReceiverPosition);
+    end
+    
+    if ~strcmp(Obj.GLOBAL_RoomType,'free field')
+        fprintf('GLOBAL_RoomType not free field. Corrected.\n');
+        Obj.GLOBAL_RoomType = 'free field';
+    end
+    
 end
   
 %% Return the size of x. If x is a cell, return the size of the strings in x.
